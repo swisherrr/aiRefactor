@@ -1,0 +1,59 @@
+{
+    "name": "ai-code-refactorer",
+    "displayName": "AI Code Refactorer",
+    "description": "AI-powered code refactoring extension for VS Code",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Programming Languages",
+        "Formatters",
+        "Other"
+    ],
+    "activationEvents": [],
+    "main": "./out/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "ai-code-refactorer.refactorCode",
+                "title": "AI Refactor: Refactor Selected Code"
+            },
+            {
+                "command": "ai-code-refactorer.explainRefactoring",
+                "title": "AI Refactor: Explain Last Refactoring"
+            }
+        ],
+        "configuration": {
+            "title": "AI Code Refactorer",
+            "properties": {
+                "aiCodeRefactorer.optimizationGoal": {
+                    "type": "string",
+                    "default": "readability",
+                    "enum": [
+                        "readability",
+                        "performance",
+                        "security"
+                    ],
+                    "description": "Primary goal for code refactoring"
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "lint": "eslint src --ext ts",
+        "test": "node ./out/test/runTest.js"
+    },
+    "devDependencies": {
+        "@types/node": "^16.18.34",
+        "@types/vscode": "^1.96.0",
+        "@typescript-eslint/eslint-plugin": "^6.7.0",
+        "@typescript-eslint/parser": "^6.7.0",
+        "eslint": "^8.47.0",
+        "typescript": "^5.2.2"
+    }
+}

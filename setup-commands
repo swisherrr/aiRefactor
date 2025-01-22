@@ -1,0 +1,5 @@
+mkdir ai-code-refactorer
+cd ai-code-refactorer
+npm init -y
+npm install -g yo generator-code
+yo code 
