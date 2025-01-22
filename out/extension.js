@@ -5,11 +5,14 @@ exports.deactivate = deactivate;
 const vscode = require("vscode");
 const refactoringProvider_1 = require("./refactoringProvider");
 const aiService_1 = require("./services/aiService");
+const RefactorPanel_1 = require("./panels/RefactorPanel");
 // Main entry point for the VS Code extension
 // Handles command registration and extension activation/deactivation
 function activate(context) {
     const aiService = new aiService_1.AIService();
     const refactoringProvider = new refactoringProvider_1.RefactoringProvider(aiService);
+    // Register the sidebar view
+    RefactorPanel_1.RefactorPanel.register(context);
     let refactorCommand = vscode.commands.registerCommand('ai-code-refactorer.refactorCode', async () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {

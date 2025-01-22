@@ -2,12 +2,16 @@ import * as vscode from
 'vscode';
 import { RefactoringProvider } from './refactoringProvider';
 import { AIService } from './services/aiService';
+import { RefactorPanel } from './panels/RefactorPanel';
 
 // Main entry point for the VS Code extension
 // Handles command registration and extension activation/deactivation
 export function activate(context: vscode.ExtensionContext) {
     const aiService = new AIService();
     const refactoringProvider = new RefactoringProvider(aiService);
+
+    // Register the sidebar view
+    RefactorPanel.register(context);
 
     let refactorCommand = vscode.commands.registerCommand('ai-code-refactorer.refactorCode', async () => {
         const editor = vscode.window.activeTextEditor;

@@ -21,6 +21,10 @@
             {
                 "command": "ai-code-refactorer.explainRefactoring",
                 "title": "AI Refactor: Explain Last Refactoring"
+            },
+            {
+                "command": "ai-code-refactorer.showPanel",
+                "title": "AI Refactor: Open Refactoring Panel"
             }
         ],
         "configuration": {
@@ -42,6 +46,24 @@
                     "scope": "application"
                 }
             }
+        },
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "ai-refactor-sidebar",
+                    "title": "AI Refactor",
+                    "icon": "resources/icon.svg"
+                }
+            ]
+        },
+        "views": {
+            "ai-refactor-sidebar": [
+                {
+                    "type": "webview",
+                    "id": "ai-refactor-sidebar-view",
+                    "name": "AI Refactor"
+                }
+            ]
         }
     },
     "scripts": {
