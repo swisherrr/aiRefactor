@@ -11,9 +11,6 @@
         "Formatters",
         "Other"
     ],
-    "activationEvents": [
-        "onCommand:ai-code-refactorer.refactorCode"
-    ],
     "main": "./out/extension.js",
     "contributes": {
         "commands": [
