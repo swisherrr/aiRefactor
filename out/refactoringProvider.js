@@ -2,6 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RefactoringProvider = void 0;
 const vscode = require("vscode");
+// Manages the refactoring logic and configuration
+// Acts as a bridge between VS Code and the AI service
 class RefactoringProvider {
     constructor(aiService) {
         this.aiService = aiService;

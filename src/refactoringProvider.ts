@@ -1,6 +1,9 @@
 import * as vscode from 'vscode';
 import { AIService } from './services/aiService';
 
+// Manages the refactoring logic and configuration
+// Acts as a bridge between VS Code and the AI service
+
 export class RefactoringProvider {
     constructor(private aiService: AIService) {}
 

@@ -5,6 +5,8 @@ exports.deactivate = deactivate;
 const vscode = require("vscode");
 const refactoringProvider_1 = require("./refactoringProvider");
 const aiService_1 = require("./services/aiService");
+// Main entry point for the VS Code extension
+// Handles command registration and extension activation/deactivation
 function activate(context) {
     const aiService = new aiService_1.AIService();
     const refactoringProvider = new refactoringProvider_1.RefactoringProvider(aiService);

@@ -3,6 +3,8 @@ import * as vscode from
 import { RefactoringProvider } from './refactoringProvider';
 import { AIService } from './services/aiService';
 
+// Main entry point for the VS Code extension
+// Handles command registration and extension activation/deactivation
 export function activate(context: vscode.ExtensionContext) {
     const aiService = new AIService();
     const refactoringProvider = new RefactoringProvider(aiService);
