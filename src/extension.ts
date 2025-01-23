@@ -39,7 +39,30 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    context.subscriptions.push(refactorCommand);
+    // Register commands to set API keys
+    let setAnthropicKey = vscode.commands.registerCommand('ai-code-refactorer.setAnthropicKey', async () => {
+        const key = await vscode.window.showInputBox({
+            prompt: "Enter your Anthropic API key",
+            password: true
+        });
+        if (key) {
+            await vscode.workspace.getConfiguration('aiCodeRefactorer').update('anthropicApiKey', key, true);
+            vscode.window.showInformationMessage('Anthropic API key updated successfully');
+        }
+    });
+
+    let setHuggingFaceKey = vscode.commands.registerCommand('ai-code-refactorer.setHuggingFaceKey', async () => {
+        const key = await vscode.window.showInputBox({
+            prompt: "Enter your HuggingFace API key",
+            password: true
+        });
+        if (key) {
+            await vscode.workspace.getConfiguration('aiCodeRefactorer').update('huggingfaceApiKey', key, true);
+            vscode.window.showInformationMessage('HuggingFace API key updated successfully');
+        }
+    });
+
+    context.subscriptions.push(refactorCommand, setAnthropicKey, setHuggingFaceKey);
 }
 
 export function deactivate() {} 

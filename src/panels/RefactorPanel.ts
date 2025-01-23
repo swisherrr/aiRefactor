@@ -1,29 +1,45 @@
 import * as vscode from 'vscode';
-import { AIService } from '../services/claudeService';
+import { BaseAIService } from '../services/baseAIService';
+import { AIService as ClaudeService } from '../services/claudeService';
+import { HuggingFaceService } from '../services/huggingFaceService';
 
 export class RefactorPanel {
     public static currentPanel: RefactorPanel | undefined;
     private readonly _view: vscode.WebviewView;
-    private readonly _aiService: AIService;
+    private _claudeService?: ClaudeService;
+    private _huggingFaceService?: HuggingFaceService;
     private readonly _decorationType: vscode.TextEditorDecorationType;
 
     constructor(view: vscode.WebviewView) {
-        this._view = view;
-        this._aiService = new AIService();
-        this._decorationType = vscode.window.createTextEditorDecorationType({
-            after: {
-                margin: '0 0 0 1em',
-                color: 'lightgreen'
-            },
-            light: {
-                backgroundColor: 'rgba(200, 250, 200, 0.2)'
-            },
-            dark: {
-                backgroundColor: 'rgba(100, 150, 100, 0.2)'
-            }
-        });
-        this._view.webview.html = this._getWebviewContent();
-        this.setupMessageListener();
+        try {
+            console.log('Initializing RefactorPanel...');
+            this._view = view;
+            console.log('Setting up decorations...');
+            this._decorationType = vscode.window.createTextEditorDecorationType({
+                after: {
+                    margin: '0 0 0 1em',
+                    color: 'lightgreen'
+                },
+                light: {
+                    backgroundColor: 'rgba(200, 250, 200, 0.2)'
+                },
+                dark: {
+                    backgroundColor: 'rgba(100, 150, 100, 0.2)'
+                }
+            });
+            console.log('Setting up HTML...');
+            this._view.webview.html = this._getWebviewContent();
+            console.log('Setting up message listener...');
+            this.setupMessageListener();
+            console.log('RefactorPanel initialization complete');
+        } catch (error: unknown) {
+            console.error('Detailed error in RefactorPanel constructor:', {
+                error,
+                message: (error as Error).message,
+                stack: (error as Error).stack
+            });
+            throw error;
+        }
     }
 
     public static register(context: vscode.ExtensionContext) {
@@ -53,6 +69,14 @@ export class RefactorPanel {
                     <h3>AI Code Refactorer</h3>
                     
                     <div class="settings-group">
+                        <label>AI Model:</label>
+                        <select id="aiModel">
+                            <option value="claude" selected>Claude (Anthropic)</option>
+                            <option value="huggingface">HuggingFace Code Model</option>
+                        </select>
+                    </div>
+
+                    <div class="settings-group">
                         <label>Optimization Goal:</label>
                         <select id="optimizationGoal">
                             <option value="readability">Readability</option>
@@ -71,9 +95,12 @@ export class RefactorPanel {
                     const vscode = acquireVsCodeApi();
                     document.getElementById('refactorBtn').addEventListener('click', () => {
                         const goal = document.getElementById('optimizationGoal').value;
+                        const model = document.getElementById('aiModel').value;
+                        console.log('Sending refactor request:', { goal, model });
                         vscode.postMessage({ 
                             command: 'refactor', 
-                            goal 
+                            goal,
+                            model 
                         });
                     });
                     window.addEventListener('message', event => {
@@ -167,10 +194,13 @@ export class RefactorPanel {
 
     private setupMessageListener() {
         this._view.webview.onDidReceiveMessage(async (message) => {
+            console.log('Received message:', message);
             switch (message.command) {
                 case 'refactor':
+                    console.log('Processing refactor command');
                     const editor = vscode.window.activeTextEditor;
                     if (!editor) {
+                        console.log('No active editor');
                         vscode.window.showErrorMessage('No active editor found');
                         return;
                     }
@@ -179,12 +209,16 @@ export class RefactorPanel {
                     const selectedText = editor.document.getText(selection);
 
                     if (!selectedText) {
+                        console.log('No text selected');
                         vscode.window.showErrorMessage('Please select code to refactor');
                         return;
                     }
 
                     try {
-                        const refactoredCode = await this._aiService.refactorCode(selectedText, message.goal);
+                        console.log('Getting service for model:', message.model);
+                        const aiService = this.getSelectedService(message.model);
+                        console.log('Calling refactorCode');
+                        const refactoredCode = await aiService.refactorCode(selectedText, message.goal);
                         
                         // Skip diff view if code is identical
                         if (refactoredCode === selectedText) {
@@ -210,6 +244,20 @@ export class RefactorPanel {
             }
         });
     }
+
+    private getSelectedService(model: string): BaseAIService {
+        if (model === 'claude') {
+            if (!this._claudeService) {
+                this._claudeService = new ClaudeService();
+            }
+            return this._claudeService;
+        } else {
+            if (!this._huggingFaceService) {
+                this._huggingFaceService = new HuggingFaceService();
+            }
+            return this._huggingFaceService;
+        }
+    }
 }
 
 class RefactorViewProvider implements vscode.WebviewViewProvider {
@@ -218,15 +266,22 @@ class RefactorViewProvider implements vscode.WebviewViewProvider {
         _context: vscode.WebviewViewResolveContext,
         _token: vscode.CancellationToken,
     ) {
-        webviewView.webview.options = {
-            enableScripts: true
-        };
-        
-        // Create panel after setting options
         try {
-            new RefactorPanel(webviewView);
-        } catch (error) {
-            console.error('Failed to create panel:', error);
+            console.log('Starting webview resolution...');
+            webviewView.webview.options = {
+                enableScripts: true
+            };
+            
+            console.log('Creating panel...');
+            const panel = new RefactorPanel(webviewView);
+            console.log('Panel created successfully');
+            
+        } catch (error: unknown) {
+            console.error('Detailed error in resolveWebviewView:', {
+                error,
+                message: (error as Error).message,
+                stack: (error as Error).stack
+            });
             throw error;
         }
     }

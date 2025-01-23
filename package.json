@@ -25,6 +25,14 @@
             {
                 "command": "ai-code-refactorer.showPanel",
                 "title": "AI Refactor: Open Refactoring Panel"
+            },
+            {
+                "command": "ai-code-refactorer.setAnthropicKey",
+                "title": "AI Refactor: Set Anthropic API Key"
+            },
+            {
+                "command": "ai-code-refactorer.setHuggingFaceKey",
+                "title": "AI Refactor: Set HuggingFace API Key"
             }
         ],
         "configuration": {
@@ -42,8 +50,13 @@
                 },
                 "aiCodeRefactorer.anthropicApiKey": {
                     "type": "string",
-                    "description": "Anthropic API Key for Claude",
-                    "scope": "application"
+                    "default": "",
+                    "description": "API key for Anthropic's Claude"
+                },
+                "aiCodeRefactorer.huggingfaceApiKey": {
+                    "type": "string",
+                    "default": "",
+                    "description": "API key for HuggingFace"
                 }
             }
         },

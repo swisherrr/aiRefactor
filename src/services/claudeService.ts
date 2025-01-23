@@ -1,9 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 import * as vscode from 'vscode';
+import { BaseAIService } from './baseAIService';
 
 // Handles communication with AI services
 // Integrates with Anthropic's Claude API for code refactoring
-export class AIService {
+export class AIService implements BaseAIService {
     private anthropic: Anthropic;
 
     constructor() {
