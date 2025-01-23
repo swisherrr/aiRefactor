@@ -174,7 +174,12 @@ export class RefactorPanel {
                     try {
                         const refactoredCode = await this._aiService.refactorCode(selectedText, message.goal);
                         
-                        // Show inline diff and get user confirmation
+                        // Skip diff view if code is identical
+                        if (refactoredCode === selectedText) {
+                            return; // AIService will show the "No changes needed" message
+                        }
+                        
+                        // Show inline diff only if there are actual changes
                         const shouldApply = await this.showInlineDiff(editor, selection, refactoredCode);
                         
                         if (shouldApply) {
