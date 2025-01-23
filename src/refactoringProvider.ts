@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { AIService } from './services/aiService';
+import { AIService } from './services/claudeService';
 
 // Manages the refactoring logic and configuration
 // Acts as a bridge between VS Code and the AI service

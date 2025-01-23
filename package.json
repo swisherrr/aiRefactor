@@ -83,6 +83,7 @@
         "typescript": "^5.2.2"
     },
     "dependencies": {
-        "@anthropic-ai/sdk": "^0.35.0"
+        "@anthropic-ai/sdk": "^0.35.0",
+        "@huggingface/inference": "^3.0.0"
     }
 }

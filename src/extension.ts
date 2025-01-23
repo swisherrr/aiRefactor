@@ -1,7 +1,7 @@
 import * as vscode from 
 'vscode';
 import { RefactoringProvider } from './refactoringProvider';
-import { AIService } from './services/aiService';
+import { AIService } from './services/claudeService';
 import { RefactorPanel } from './panels/RefactorPanel';
 
 // Main entry point for the VS Code extension

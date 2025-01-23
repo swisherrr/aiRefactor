@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { AIService } from '../services/aiService';
+import { AIService } from '../services/claudeService';
 
 export class RefactorPanel {
     public static currentPanel: RefactorPanel | undefined;
@@ -28,9 +28,11 @@ export class RefactorPanel {
 
     public static register(context: vscode.ExtensionContext) {
         const provider = new RefactorViewProvider();
-        context.subscriptions.push(
-            vscode.window.registerWebviewViewProvider('ai-refactor-sidebar-view', provider)
+        const disposable = vscode.window.registerWebviewViewProvider(
+            'ai-refactor-sidebar-view',
+            provider
         );
+        context.subscriptions.push(disposable);
     }
 
     private _getWebviewContent() {
@@ -42,16 +44,23 @@ export class RefactorPanel {
                     .container { display: flex; flex-direction: column; gap: 10px; }
                     select, button { padding: 8px; }
                     button { cursor: pointer; }
+                    .settings-group { margin-bottom: 15px; }
+                    label { display: block; margin-bottom: 5px; }
                 </style>
             </head>
             <body>
                 <div class="container">
                     <h3>AI Code Refactorer</h3>
-                    <select id="optimizationGoal">
-                        <option value="readability">Readability</option>
-                        <option value="performance">Performance</option>
-                        <option value="security">Security</option>
-                    </select>
+                    
+                    <div class="settings-group">
+                        <label>Optimization Goal:</label>
+                        <select id="optimizationGoal">
+                            <option value="readability">Readability</option>
+                            <option value="performance">Performance</option>
+                            <option value="security">Security</option>
+                        </select>
+                    </div>
+
                     <button id="refactorBtn">Refactor Selected Code</button>
                     <div id="explanation">
                         <h4>Changes Explained</h4>
@@ -62,7 +71,10 @@ export class RefactorPanel {
                     const vscode = acquireVsCodeApi();
                     document.getElementById('refactorBtn').addEventListener('click', () => {
                         const goal = document.getElementById('optimizationGoal').value;
-                        vscode.postMessage({ command: 'refactor', goal });
+                        vscode.postMessage({ 
+                            command: 'refactor', 
+                            goal 
+                        });
                     });
                     window.addEventListener('message', event => {
                         const message = event.data;
@@ -201,17 +213,21 @@ export class RefactorPanel {
 }
 
 class RefactorViewProvider implements vscode.WebviewViewProvider {
-    private _view?: vscode.WebviewView;
-
     resolveWebviewView(
         webviewView: vscode.WebviewView,
-        context: vscode.WebviewViewResolveContext,
+        _context: vscode.WebviewViewResolveContext,
         _token: vscode.CancellationToken,
     ) {
-        this._view = webviewView;
         webviewView.webview.options = {
-            enableScripts: true,
+            enableScripts: true
         };
-        new RefactorPanel(webviewView);
+        
+        // Create panel after setting options
+        try {
+            new RefactorPanel(webviewView);
+        } catch (error) {
+            console.error('Failed to create panel:', error);
+            throw error;
+        }
     }
 } 
