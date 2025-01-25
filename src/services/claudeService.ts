@@ -87,4 +87,37 @@ ${code}`;
         // TODO: Implement explanation generation
         return "Explanation of refactoring changes will be implemented here.";
     }
+
+    async addComments(code: string): Promise<string> {
+        try {
+            const prompt = `Add clear, helpful comments to this code. The comments should:
+1. Explain what the code does
+2. Highlight any important logic or edge cases
+3. Use consistent comment style
+4. Don't state the obvious
+5. Return the code with added comments only
+
+Original code:
+${code}`;
+
+            const response = await this.anthropic.messages.create({
+                model: 'claude-3-haiku-20240307',
+                max_tokens: 1500,
+                messages: [{ role: 'user', content: prompt }],
+                system: "You are a code documentation expert. Add helpful comments that explain the code's purpose and logic. Don't modify the code itself."
+            });
+
+            if (response.content[0].type === 'text') {
+                let commentedCode = response.content[0].text;
+                commentedCode = commentedCode.replace(/```[\w]*\n/g, '');
+                commentedCode = commentedCode.replace(/```\n?/g, '');
+                commentedCode = commentedCode.trim();
+                return commentedCode;
+            }
+            throw new Error('Unexpected response format from AI service');
+        } catch (error: any) {
+            console.error('AI Service error:', error);
+            throw error;
+        }
+    }
 } 

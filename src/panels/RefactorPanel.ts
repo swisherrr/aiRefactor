@@ -77,6 +77,15 @@ export class RefactorPanel {
                     </div>
 
                     <div class="settings-group">
+                        <label>Operation:</label>
+                        <select id="operation">
+                            <option value="refactor">Refactor Code</option>
+                            <option value="complete">Complete Code</option>
+                            <option value="tonecheck">Check Comment Tone</option>
+                        </select>
+                    </div>
+
+                    <div class="settings-group">
                         <label>Optimization Goal:</label>
                         <select id="optimizationGoal">
                             <option value="readability">Readability</option>
@@ -85,7 +94,7 @@ export class RefactorPanel {
                         </select>
                     </div>
 
-                    <button id="refactorBtn">Refactor Selected Code</button>
+                    <button id="actionBtn">Process Selected Code</button>
                     <div id="explanation">
                         <h4>Changes Explained</h4>
                         <pre id="explanationText"></pre>
@@ -93,12 +102,20 @@ export class RefactorPanel {
                 </div>
                 <script>
                     const vscode = acquireVsCodeApi();
-                    document.getElementById('refactorBtn').addEventListener('click', () => {
+                    const modelSelect = document.getElementById('aiModel');
+                    const operationSelect = document.getElementById('operation');
+                    
+                    operationSelect.addEventListener('change', () => {
+                        // Disable model selection for code completion
+                        modelSelect.disabled = operationSelect.value === 'complete';
+                    });
+
+                    document.getElementById('actionBtn').addEventListener('click', () => {
                         const goal = document.getElementById('optimizationGoal').value;
                         const model = document.getElementById('aiModel').value;
-                        console.log('Sending refactor request:', { goal, model });
+                        const operation = document.getElementById('operation').value;
                         vscode.postMessage({ 
-                            command: 'refactor', 
+                            command: operation, 
                             goal,
                             model 
                         });
@@ -195,52 +212,74 @@ export class RefactorPanel {
     private setupMessageListener() {
         this._view.webview.onDidReceiveMessage(async (message) => {
             console.log('Received message:', message);
-            switch (message.command) {
-                case 'refactor':
-                    console.log('Processing refactor command');
-                    const editor = vscode.window.activeTextEditor;
-                    if (!editor) {
-                        console.log('No active editor');
-                        vscode.window.showErrorMessage('No active editor found');
-                        return;
-                    }
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                console.log('No active editor');
+                vscode.window.showErrorMessage('No active editor found');
+                return;
+            }
 
-                    const selection = editor.selection;
-                    const selectedText = editor.document.getText(selection);
+            const selection = editor.selection;
+            const selectedText = editor.document.getText(selection);
 
-                    if (!selectedText) {
-                        console.log('No text selected');
-                        vscode.window.showErrorMessage('Please select code to refactor');
-                        return;
-                    }
+            if (!selectedText) {
+                console.log('No text selected');
+                vscode.window.showErrorMessage('Please select code to refactor');
+                return;
+            }
 
-                    try {
-                        console.log('Getting service for model:', message.model);
-                        const aiService = this.getSelectedService(message.model);
+            try {
+                console.log('Getting service for model:', message.model);
+                const aiService = this.getSelectedService(message.model);
+
+                let processedCode: string;
+                switch (message.command) {
+                    case 'refactor':
                         console.log('Calling refactorCode');
-                        const refactoredCode = await aiService.refactorCode(selectedText, message.goal);
-                        
-                        // Skip diff view if code is identical
-                        if (refactoredCode === selectedText) {
-                            return; // AIService will show the "No changes needed" message
+                        processedCode = await aiService.refactorCode(selectedText, message.goal);
+                        break;
+                    case 'complete':
+                        console.log('Calling completeCode with HuggingFace');
+                        if (!this._huggingFaceService) {
+                            this._huggingFaceService = new HuggingFaceService();
                         }
-                        
-                        // Show inline diff only if there are actual changes
-                        const shouldApply = await this.showInlineDiff(editor, selection, refactoredCode);
-                        
-                        if (shouldApply) {
-                            await editor.edit(editBuilder => {
-                                editBuilder.replace(selection, refactoredCode);
-                            });
-                            this._view.webview.postMessage({ 
-                                type: 'setExplanation', 
-                                text: 'Changes applied successfully!' 
-                            });
+                        // Force HuggingFace for code completion, ignore selected model
+                        processedCode = await this._huggingFaceService.completeCode(selectedText);
+                        break;
+                    case 'tonecheck':
+                        console.log('Checking comment tone');
+                        if (!this._huggingFaceService) {
+                            this._huggingFaceService = new HuggingFaceService();
                         }
-                    } catch (error) {
-                        vscode.window.showErrorMessage('Failed to refactor code: ' + error);
-                    }
-                    break;
+                        const analysis = await this._huggingFaceService.checkCommentTone(selectedText);
+                        this._view.webview.postMessage({ 
+                            type: 'setExplanation', 
+                            text: analysis 
+                        });
+                        return;  // Don't show diff view for tone check
+                    default:
+                        return;
+                }
+                
+                // Skip diff view if code is identical
+                if (processedCode === selectedText) {
+                    return;
+                }
+                
+                // Show inline diff only if there are actual changes
+                const shouldApply = await this.showInlineDiff(editor, selection, processedCode);
+                
+                if (shouldApply) {
+                    await editor.edit(editBuilder => {
+                        editBuilder.replace(selection, processedCode);
+                    });
+                    this._view.webview.postMessage({ 
+                        type: 'setExplanation', 
+                        text: 'Changes applied successfully!' 
+                    });
+                }
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to process code: ${error}`);
             }
         });
     }
