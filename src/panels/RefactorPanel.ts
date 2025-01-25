@@ -57,34 +57,42 @@ export class RefactorPanel {
             <head>
                 <style>
                     body { padding: 10px; }
-                    .container { display: flex; flex-direction: column; gap: 10px; }
-                    select, button { padding: 8px; }
-                    button { cursor: pointer; }
+                    .container { display: flex; flex-direction: column; gap: 12px; }
+                    select { 
+                        padding: 8px;
+                        border: 1px solid var(--vscode-button-border);
+                        background: var(--vscode-input-background);
+                        color: var(--vscode-input-foreground);
+                        border-radius: 4px;
+                    }
+                    button { 
+                        padding: 10px 16px;
+                        border: none;
+                        background: var(--vscode-button-background);
+                        color: var(--vscode-button-foreground);
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-weight: 500;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+                    }
+                    button:hover {
+                        background: var(--vscode-button-hoverBackground);
+                    }
                     .settings-group { margin-bottom: 15px; }
-                    label { display: block; margin-bottom: 5px; }
+                    label { 
+                        display: block; 
+                        margin-bottom: 6px;
+                        color: var(--vscode-foreground);
+                    }
                 </style>
             </head>
             <body>
                 <div class="container">
-                    <h3>AI Code Refactorer</h3>
+                    <h3>aiRefactor</h3>
                     
-                    <div class="settings-group">
-                        <label>AI Model:</label>
-                        <select id="aiModel">
-                            <option value="claude" selected>Claude (Anthropic)</option>
-                            <option value="huggingface">HuggingFace Code Model</option>
-                        </select>
-                    </div>
-
-                    <div class="settings-group">
-                        <label>Operation:</label>
-                        <select id="operation">
-                            <option value="refactor">Refactor Code</option>
-                            <option value="complete">Complete Code</option>
-                            <option value="tonecheck">Check Comment Tone</option>
-                        </select>
-                    </div>
-
                     <div class="settings-group">
                         <label>Optimization Goal:</label>
                         <select id="optimizationGoal">
@@ -94,37 +102,29 @@ export class RefactorPanel {
                         </select>
                     </div>
 
-                    <button id="actionBtn">Process Selected Code</button>
-                    <div id="explanation">
-                        <h4>Changes Explained</h4>
-                        <pre id="explanationText"></pre>
-                    </div>
+                    <button id="refactorBtn">Refactor with Claude 3.5</button>
+                    <button id="toneCheckBtn">Check Comment Tone with DistilBERT</button>
                 </div>
                 <script>
                     const vscode = acquireVsCodeApi();
-                    const modelSelect = document.getElementById('aiModel');
-                    const operationSelect = document.getElementById('operation');
+                    const state = vscode.getState() || { goal: 'readability' };
                     
-                    operationSelect.addEventListener('change', () => {
-                        // Disable model selection for code completion
-                        modelSelect.disabled = operationSelect.value === 'complete';
+                    document.getElementById('optimizationGoal').value = state.goal;
+                    
+                    document.getElementById('optimizationGoal').addEventListener('change', (e) => {
+                        state.goal = e.target.value;
+                        vscode.setState(state);
                     });
 
-                    document.getElementById('actionBtn').addEventListener('click', () => {
-                        const goal = document.getElementById('optimizationGoal').value;
-                        const model = document.getElementById('aiModel').value;
-                        const operation = document.getElementById('operation').value;
+                    document.getElementById('refactorBtn').addEventListener('click', () => {
                         vscode.postMessage({ 
-                            command: operation, 
-                            goal,
-                            model 
+                            command: 'refactor',
+                            goal: document.getElementById('optimizationGoal').value
                         });
                     });
-                    window.addEventListener('message', event => {
-                        const message = event.data;
-                        if (message.type === 'setExplanation') {
-                            document.getElementById('explanationText').textContent = message.text;
-                        }
+
+                    document.getElementById('toneCheckBtn').addEventListener('click', () => {
+                        vscode.postMessage({ command: 'tonecheck' });
                     });
                 </script>
             </body>
@@ -229,54 +229,44 @@ export class RefactorPanel {
             }
 
             try {
-                console.log('Getting service for model:', message.model);
-                const aiService = this.getSelectedService(message.model);
-
-                let processedCode: string;
                 switch (message.command) {
                     case 'refactor':
                         console.log('Calling refactorCode');
-                        processedCode = await aiService.refactorCode(selectedText, message.goal);
-                        break;
-                    case 'complete':
-                        console.log('Calling completeCode with HuggingFace');
-                        if (!this._huggingFaceService) {
-                            this._huggingFaceService = new HuggingFaceService();
+                        const aiService = new ClaudeService();  // Using Claude by default
+                        const processedCode = await aiService.refactorCode(selectedText, message.goal);
+                        
+                        if (processedCode === selectedText) {
+                            return;
                         }
-                        // Force HuggingFace for code completion, ignore selected model
-                        processedCode = await this._huggingFaceService.completeCode(selectedText);
+                        
+                        const shouldApply = await this.showInlineDiff(editor, selection, processedCode);
+                        if (shouldApply) {
+                            await editor.edit(editBuilder => {
+                                editBuilder.replace(selection, processedCode);
+                            });
+                            this._view.webview.postMessage({ 
+                                type: 'setExplanation', 
+                                text: 'Changes applied successfully!' 
+                            });
+                        }
                         break;
+
                     case 'tonecheck':
                         console.log('Checking comment tone');
                         if (!this._huggingFaceService) {
                             this._huggingFaceService = new HuggingFaceService();
                         }
                         const analysis = await this._huggingFaceService.checkCommentTone(selectedText);
-                        this._view.webview.postMessage({ 
-                            type: 'setExplanation', 
-                            text: analysis 
-                        });
-                        return;  // Don't show diff view for tone check
-                    default:
-                        return;
-                }
-                
-                // Skip diff view if code is identical
-                if (processedCode === selectedText) {
-                    return;
-                }
-                
-                // Show inline diff only if there are actual changes
-                const shouldApply = await this.showInlineDiff(editor, selection, processedCode);
-                
-                if (shouldApply) {
-                    await editor.edit(editBuilder => {
-                        editBuilder.replace(selection, processedCode);
-                    });
-                    this._view.webview.postMessage({ 
-                        type: 'setExplanation', 
-                        text: 'Changes applied successfully!' 
-                    });
+                        
+                        // Show analysis in notification instead of panel
+                        if (analysis.includes('✅')) {
+                            vscode.window.showInformationMessage(analysis);
+                        } else if (analysis.includes('⚠️')) {
+                            vscode.window.showWarningMessage(analysis);
+                        } else {
+                            vscode.window.showInformationMessage(analysis);
+                        }
+                        break;
                 }
             } catch (error) {
                 vscode.window.showErrorMessage(`Failed to process code: ${error}`);

@@ -175,18 +175,14 @@ Output: Complete implementation */
 
             // Interpret the sentiment
             const sentiment = response[0];
-            let analysis = `Comment Tone Analysis:\n`;
             
             if (sentiment.label === 'POSITIVE' && sentiment.score > 0.8) {
-                analysis += `✅ Comments are professional and positive (${Math.round(sentiment.score * 100)}% confidence)`;
+                return `✅ Comments are professional and clear`;
             } else if (sentiment.label === 'NEGATIVE' && sentiment.score > 0.8) {
-                analysis += `⚠️ Comments might be too negative or harsh (${Math.round(sentiment.score * 100)}% confidence)\n`;
-                analysis += `Consider revising for a more constructive tone.`;
+                return `⚠️ Comments need more positive tone`;
             } else {
-                analysis += `📝 Comments are neutral in tone (${Math.round(sentiment.score * 100)}% confidence)`;
+                return `📝 Comments are neutral`;
             }
-
-            return analysis;
         } catch (error: any) {
             console.error('HuggingFace error details:', error);
             throw error;
