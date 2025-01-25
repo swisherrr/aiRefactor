@@ -1,37 +1,54 @@
-# AI Code Refactorer
+# aiRefactor - VS Code Extension
 
-A VS Code extension that uses AI to help refactor your code for better readability, performance, or security.
+A VS Code extension that uses AI to help improve your code. Powered by Claude 3.5 Sonnet and DistilBERT.
 
 ## Features
 
-- AI-powered code refactoring
-- Support for multiple optimization goals (readability, performance, security)
-- Detailed explanations of refactoring changes
-- Easy integration with VS Code's Command Palette
+### 1. AI Code Refactoring
+Uses Claude 3.5 Sonnet to refactor selected code with a focus on:
+- Readability
+- Performance
+- Security
+
+### 2. Comment Tone Analysis
+Uses DistilBERT to analyze the tone of code comments, helping maintain professional documentation.
+
+## Setup
+
+1. Install the extension
+2. Configure your API keys in VS Code settings:
+   - `aiCodeRefactorer.anthropicApiKey`: Your Claude API key
+   - `aiCodeRefactorer.huggingfaceApiKey`: Your HuggingFace API key
 
 ## Usage
 
-1. Select the code you want to refactor in your editor
-2. Open the Command Palette (Ctrl+Shift+P / Cmd+Shift+P)
-3. Type "AI Refactor" and select "AI Refactor: Refactor Selected Code"
-4. The selected code will be refactored according to your settings
-
-## Extension Settings
-
-This extension contributes the following settings:
-
-* `aiCodeRefactorer.optimizationGoal`: Set the primary goal for code refactoring (readability/performance/security)
+1. Select code in your editor
+2. Open the aiRefactor panel (View → Command Palette → "Show aiRefactor Panel")
+3. Choose an operation:
+   - **Refactor with Claude 3.5**: Select an optimization goal and click to refactor
+   - **Check Comment Tone**: Analyzes comments for professionalism
 
 ## Requirements
 
-- Visual Studio Code 1.85.0 or higher
+- VS Code version 1.85.0 or higher
+- Active internet connection
+- Valid API keys for:
+  - Anthropic (Claude)
+  - HuggingFace
+
+## Extension Settings
+
+* `aiCodeRefactorer.anthropicApiKey`: Claude API key
+* `aiCodeRefactorer.huggingfaceApiKey`: HuggingFace API key
 
 ## Known Issues
 
-- Currently in development
+- Large code selections may take longer to process
+- API rate limits apply based on your subscription level
 
 ## Release Notes
 
-### 0.0.1
-
-Initial release of AI Code Refactorer 
+### 1.0.0
+- Initial release
+- Code refactoring with Claude 3.5
+- Comment tone analysis with DistilBERT 
