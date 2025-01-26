@@ -42,6 +42,40 @@ If no improvements needed, return 'NO_CHANGES_NEEDED'.
 
 Original code:
 ${code}`;
+            } else if (optimizationGoal === 'readability') {
+                prompt += `Readability Analysis Instructions:
+1. Check for naming issues:
+   - Single-letter variable names
+   - Unclear function names
+   - Abbreviations without context
+   - Inconsistent naming patterns
+
+2. Check for formatting issues:
+   - Missing spaces around operators
+   - Inconsistent indentation
+   - Missing line breaks
+   - Code not properly spaced
+   - Long lines that should be split
+
+3. Check for structural issues:
+   - Unclear parameter names
+   - Missing or unclear block structure
+   - Nested logic that could be simplified
+   - Inconsistent brace style
+   - Magic numbers without context
+
+4. Improve by:
+   - Using descriptive variable names
+   - Adding proper spacing and indentation
+   - Breaking long lines into readable chunks
+   - Using consistent formatting
+   - Making logic flow clear
+
+IMPORTANT: Return ONLY the refactored code with no explanations or comments.
+If no improvements needed, return 'NO_CHANGES_NEEDED'.
+
+Original code:
+${code}`;
             } else {
                 prompt += `CRITICAL INSTRUCTIONS:
 1. First, analyze if the code actually needs ${optimizationGoal} improvements
