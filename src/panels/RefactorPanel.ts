@@ -99,6 +99,9 @@ export class RefactorPanel {
                             <option value="readability">Readability</option>
                             <option value="performance">Performance</option>
                             <option value="security">Security</option>
+                            <option value="modernization">Modernize Code</option>
+                            <option value="testability">Improve Testability</option>
+                            <option value="error-handling">Error Handling</option>
                         </select>
                     </div>
 

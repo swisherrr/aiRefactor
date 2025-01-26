@@ -20,8 +20,9 @@ export class AIService implements BaseAIService {
         try {
             let prompt = `As a code refactoring assistant, analyze this code for ${optimizationGoal} improvements.\n\n`;
 
-            if (optimizationGoal === 'performance') {
-                prompt += `Performance Analysis Instructions:
+            switch (optimizationGoal) {
+                case 'performance':
+                    prompt += `Performance Analysis Instructions:
 1. Check for algorithmic inefficiencies:
    - O(n²) loops that could be O(n)
    - Redundant operations
@@ -42,8 +43,10 @@ If no improvements needed, return 'NO_CHANGES_NEEDED'.
 
 Original code:
 ${code}`;
-            } else if (optimizationGoal === 'readability') {
-                prompt += `Readability Analysis Instructions:
+                    break;
+
+                case 'readability':
+                    prompt += `Readability Analysis Instructions:
 1. Check for naming issues:
    - Single-letter variable names
    - Unclear function names
@@ -76,8 +79,10 @@ If no improvements needed, return 'NO_CHANGES_NEEDED'.
 
 Original code:
 ${code}`;
-            } else if (optimizationGoal === 'security') {
-                prompt += `Security Analysis Instructions:
+                    break;
+
+                case 'security':
+                    prompt += `Security Analysis Instructions:
 1. Check for critical vulnerabilities:
    - Hardcoded credentials or API keys
    - Use of eval() or similar dangerous functions
@@ -117,33 +122,93 @@ If no improvements needed, return 'NO_CHANGES_NEEDED'.
 
 Original code:
 ${code}`;
-            } else {
-                prompt += `CRITICAL INSTRUCTIONS:
-1. First, analyze if the code actually needs ${optimizationGoal} improvements
-2. Only propose changes if there are SPECIFIC ${optimizationGoal} issues to fix
-3. If no real ${optimizationGoal} issues exist, return the original code unchanged
-4. For any changes you make, they must directly improve ${optimizationGoal}
-5. Return only the code, no explanations
+                    break;
 
-Security-specific guidelines:
-- Only modify if there are actual vulnerabilities like:
-  * Input validation gaps that could lead to crashes
-  * Type coercion vulnerabilities
-  * Buffer overflows
-  * Code injection possibilities
-  * Prototype pollution risks
-- Don't modify for hypothetical edge cases
-- Don't add type checks unless there's a clear security benefit
-- Don't change working code that handles its edge cases safely
+                case 'modernization':
+                    prompt += `Modernization Analysis Instructions:
+1. Check for outdated patterns:
+   - var instead of let/const
+   - Traditional functions vs arrow functions
+   - Callbacks instead of Promises/async-await
+   - Old loop patterns vs modern iterators
+   - Manual DOM manipulation vs modern APIs
 
-Readability-specific guidelines:
-- Only modify if the code is actually unclear
-- Don't change clear, working code
-- Focus on genuine comprehension issues
+2. Update to modern JavaScript:
+   - Convert to ES6+ syntax
+   - Use template literals
+   - Implement destructuring
+   - Use optional chaining
+   - Convert to nullish coalescing
+   - Use modern array methods
+   - Implement async/await
+   - Use modern class syntax
+
+3. Apply modern best practices:
+   - Use strict mode
+   - Implement modules
+   - Use proper imports/exports
+   - Convert to TypeScript syntax
+   - Use modern event handling`;
+                    break;
+
+                case 'testability':
+                    prompt += `Testability Analysis Instructions:
+1. Check for testability issues:
+   - Functions with side effects
+   - Hard-to-mock dependencies
+   - Global state usage
+   - Tight coupling
+   - Mixed concerns
+   - Untestable conditionals
+
+2. Improve for testing:
+   - Extract pure functions
+   - Add dependency injection
+   - Separate side effects
+   - Break down complex functions
+   - Make dependencies explicit
+   - Improve function isolation
+
+3. Enable better testing:
+   - Add parameter validation
+   - Make return values consistent
+   - Remove hidden state
+   - Extract configuration
+   - Make side effects obvious`;
+                    break;
+
+                case 'error-handling':
+                    prompt += `Error Handling Analysis Instructions:
+1. Check for error handling issues:
+   - Missing try-catch blocks
+   - Swallowed exceptions
+   - Unclear error messages
+   - Unhandled edge cases
+   - Missing error types
+   - Silent failures
+
+2. Improve error handling:
+   - Add proper try-catch
+   - Use custom error classes
+   - Add meaningful error messages
+   - Handle all edge cases
+   - Implement error recovery
+   - Add error logging
+
+3. Error handling best practices:
+   - Proper error propagation
+   - Consistent error patterns
+   - Descriptive error types
+   - Graceful degradation
+   - User-friendly messages`;
+                    break;
+            }
+
+            prompt += `\n\nIMPORTANT: Return ONLY the refactored code with no explanations or comments.
+If no improvements needed, return 'NO_CHANGES_NEEDED'.
 
 Original code:
 ${code}`;
-            }
 
             const response = await this.anthropic.messages.create({
                 model: 'claude-3-haiku-20240307',
