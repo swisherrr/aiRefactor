@@ -18,9 +18,32 @@ export class AIService implements BaseAIService {
 
     async refactorCode(code: string, optimizationGoal: string): Promise<string> {
         try {
-            const prompt = `As a code refactoring assistant, analyze this code for ${optimizationGoal} improvements.
+            let prompt = `As a code refactoring assistant, analyze this code for ${optimizationGoal} improvements.\n\n`;
 
-CRITICAL INSTRUCTIONS:
+            if (optimizationGoal === 'performance') {
+                prompt += `Performance Analysis Instructions:
+1. Check for algorithmic inefficiencies:
+   - O(n²) loops that could be O(n)
+   - Redundant operations
+   - Unnecessary array traversals
+   - Inefficient data structures
+2. Look for specific performance issues:
+   - Nested loops that could be simplified or stacked instead
+   - Multiple array iterations that could be combined
+   - Using includes() inside loops
+   - Redundant calculations
+3. Consider using:
+   - Hash maps/Sets for lookups
+   - Single-pass solutions
+   - More efficient data structures
+
+IMPORTANT: Return ONLY the refactored code with no explanations or comments.
+If no improvements needed, return 'NO_CHANGES_NEEDED'.
+
+Original code:
+${code}`;
+            } else {
+                prompt += `CRITICAL INSTRUCTIONS:
 1. First, analyze if the code actually needs ${optimizationGoal} improvements
 2. Only propose changes if there are SPECIFIC ${optimizationGoal} issues to fix
 3. If no real ${optimizationGoal} issues exist, return the original code unchanged
@@ -38,11 +61,6 @@ Security-specific guidelines:
 - Don't add type checks unless there's a clear security benefit
 - Don't change working code that handles its edge cases safely
 
-Performance-specific guidelines:
-- Only modify if there are clear bottlenecks
-- Don't optimize prematurely
-- Only change algorithms if there's significant improvement
-
 Readability-specific guidelines:
 - Only modify if the code is actually unclear
 - Don't change clear, working code
@@ -50,28 +68,31 @@ Readability-specific guidelines:
 
 Original code:
 ${code}`;
+            }
 
             const response = await this.anthropic.messages.create({
                 model: 'claude-3-haiku-20240307',
                 max_tokens: 1500,
                 messages: [{ role: 'user', content: prompt }],
-                system: "You are a conservative code refactoring assistant. Only suggest changes when there are clear and specific issues to fix. If the code is already well-written for the given goal, return 'NO_CHANGES_NEEDED'."
+                system: "You are a code refactoring assistant. Return ONLY the refactored code with no explanations. If no changes are needed, return exactly 'NO_CHANGES_NEEDED'."
             });
 
             if (response.content[0].type === 'text') {
                 let refactoredCode = response.content[0].text;
+                
                 // Clean up the response
-                refactoredCode = refactoredCode.replace(/```[\w]*\n/g, '');
-                refactoredCode = refactoredCode.replace(/```\n?/g, '');
-                refactoredCode = refactoredCode.replace(/Here['']s the refactored code:?\n*/gi, '');
-                refactoredCode = refactoredCode.trim();
+                refactoredCode = refactoredCode
+                    .replace(/```[\w]*\n/g, '')
+                    .replace(/```\n?/g, '')
+                    .replace(/Here['']s the refactored code:?\n*/gi, '')
+                    .replace(/Explanation:[\s\S]*$/i, '')  // Remove any explanation section
+                    .replace(/^[\s\S]*?function/, 'function')  // Remove any text before the function
+                    .trim();
 
                 // Check if AI decided no changes were needed
-                if (refactoredCode.includes('NO_CHANGES_NEEDED') || 
-                    refactoredCode === code || 
-                    refactoredCode.includes('recommend returning the original code unchanged')) {
+                if (refactoredCode.includes('NO_CHANGES_NEEDED')) {
                     vscode.window.showInformationMessage(`No refactoring needed - code is already optimized for ${optimizationGoal}`);
-                    return code; // Return original code
+                    return code;
                 }
 
                 return refactoredCode;
