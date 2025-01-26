@@ -76,6 +76,47 @@ If no improvements needed, return 'NO_CHANGES_NEEDED'.
 
 Original code:
 ${code}`;
+            } else if (optimizationGoal === 'security') {
+                prompt += `Security Analysis Instructions:
+1. Check for critical vulnerabilities:
+   - Hardcoded credentials or API keys
+   - Use of eval() or similar dangerous functions
+   - Unsanitized input handling
+   - XSS vulnerabilities
+   - Insecure HTTP usage
+   - SQL injection risks
+   - Prototype pollution
+   - Unsafe object assignments
+
+2. Check for data exposure:
+   - Sensitive data in frontend code
+   - Exposed credentials
+   - Insecure storage of secrets
+   - Logging of sensitive information
+   - Unencrypted data transmission
+
+3. Check for unsafe practices:
+   - Direct DOM manipulation with user input
+   - Use of innerHTML with untrusted data
+   - Lack of input validation
+   - Insecure URL handling
+   - Dangerous string concatenation
+
+4. Required fixes:
+   - Remove hardcoded credentials
+   - Use environment variables for secrets
+   - Sanitize all user inputs
+   - Use HTTPS for all requests
+   - Implement proper input validation
+   - Use safe DOM methods
+   - Add security headers
+   - Use secure string operations
+
+IMPORTANT: Return ONLY the refactored code with no explanations or comments.
+If no improvements needed, return 'NO_CHANGES_NEEDED'.
+
+Original code:
+${code}`;
             } else {
                 prompt += `CRITICAL INSTRUCTIONS:
 1. First, analyze if the code actually needs ${optimizationGoal} improvements
